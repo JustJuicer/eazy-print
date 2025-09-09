@@ -3,7 +3,10 @@
 //
 
 #ifndef SPRINT_HPP
+#include <format>
+void print() {
 
+}
 #define SPRINT_HPP
 
 #endif //SPRINT_HPP
