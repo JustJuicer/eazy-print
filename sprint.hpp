@@ -7,6 +7,7 @@
 #include <tuple>
 #include <optional>
 #include <filesystem>
+#include <memory>
 /////////////////////// STD TYPE SPECIALIZATION ////////////////////////////
 template<typename T1, typename T2>
 struct std::formatter<std::pair<T1, T2>> {
@@ -76,6 +77,31 @@ struct std::formatter<std::filesystem::path> {
     }
 };
 
+template <typename T>
+struct std::formatter<std::shared_ptr<T>> {
+    constexpr auto parse(std::format_parse_context& ctx) {
+        return ctx.begin();
+    }
+    auto format(const std::shared_ptr<T>& t, std::format_context& ctx) const {
+        auto out = ctx.out();
+        // out = std::format_to(out, "shared_ptr {{ address: {}, count: {} }}", static_cast<void*>(t.get()), t.use_count());
+        out = std::format_to(out, "{{ address: {}, count: {} }}", static_cast<void*>(t.get()), t.use_count());
+        return out;
+    }
+};
+
+template <typename T>
+struct std::formatter<std::unique_ptr<T>> {
+    constexpr auto parse(std::format_parse_context& ctx) {
+        return ctx.begin();
+    }
+    auto format(const std::unique_ptr<T>& t, std::format_context& ctx) const {
+        auto out = ctx.out();
+        // out = std::format_to(out, "shared_ptr {{ address: {}, count: {} }}", static_cast<void*>(t.get()), t.use_count());
+        out = std::format_to(out, "{{ address: {} }}", static_cast<void*>(t.get()));
+        return out;
+    }
+};
 
 /////////////////////// STD TYPE SPECIALIZATION ////////////////////////////
 void print() {

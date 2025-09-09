@@ -22,4 +22,13 @@ int main() {
         std::filesystem::path p{"A/B/C/D"};
         std::println("[std] path: {}", p);
     }
+    {
+        auto p = std::make_shared<int>(3);
+        auto c = p;
+        std::println("[std] shared_ptr: {}", p);
+    }
+    {
+        auto p = std::make_unique<int>(4);
+        std::println("[std] unique_ptr: {}", p);
+    }
 }
