@@ -3,6 +3,9 @@
 //
 #include "sprint.hpp"
 #include <print>
+#include <deque>
+#include <vector>
+#include <list>
 int main() {
     {
         std::pair p{1, 3.4};
@@ -37,5 +40,21 @@ int main() {
     }
     {
         std::println("{}", std::chrono::microseconds(3));
+    }
+    {
+        struct Tag {
+            int data;
+            std::string to_string() {
+                return std::to_string(data);
+            }
+        };
+        std::println("range test");
+        std::vector v{1, 2, 3, 4};
+        std::deque<std::vector<int>> d{{2, 3}, {5, 6}, {7}};
+        Tag tag{3};
+        ::print(std::cout, v);
+        ::print(std::cout, d);
+        ::print(std::cout, tag);
+        ::print(std::cout, std::pair{3, 4});
     }
 }

@@ -1,6 +1,6 @@
 # Support Type
 
-## STD Type
+## STD Type [Enable std::format]
 - pair<T1, T2>        √
 - tuple<...Args>      √
 - optional\<T\>       √
@@ -24,3 +24,7 @@
 - class with function to_string()
 - custom range
 - aggregate type
+
+
+## Config
+- color
