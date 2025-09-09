@@ -18,6 +18,33 @@ struct std::formatter<std::pair<T1, T2>> {
 };
 
 
+template <typename ...Args>
+struct std::formatter<std::tuple<Args...>> {
+    constexpr auto parse(std::format_parse_context& ctx) {
+        return ctx.begin();
+    }
+    static void for_each(auto&& fn, auto... args) {
+        (fn(args), ...);
+    }
+    auto format(const std::tuple<Args...>& tuple, std::format_context& ctx) const {
+        auto out = ctx.out();
+        out = std::format_to(out, "(");
+        bool is_first = true;
+        std::apply([&]<typename... Args_>(Args_&&... args) {
+            for_each([&]<typename T>(T&& ele) {
+                if (is_first) {
+                    out = std::format_to(out, "{}", std::forward<T>(ele));
+                    is_first = false;
+                } else {
+                    out = std::format_to(out, ", {}", std::forward<T>(ele));
+                }
+            }, std::forward<Args_>(args)...);
+        } , tuple);
+        out = std::format_to(out, ")");
+        return out;
+    }
+};
+
 /////////////////////// STD TYPE SPECIALIZATION ////////////////////////////
 void print() {
 
