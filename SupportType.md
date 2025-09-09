@@ -1,10 +1,10 @@
 # Support Type
 
 ## STD Type
-- pair<T1, T2>
-- tuple<...Args>
-- optional\<T\>
-- filesystem::path
+- pair<T1, T2>        √
+- tuple<...Args>      √
+- optional\<T\>       √
+- filesystem::path    √
 - shared_ptr
 - unique_ptr
 - complex

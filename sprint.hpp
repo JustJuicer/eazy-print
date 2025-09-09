@@ -6,6 +6,7 @@
 #include <format>
 #include <tuple>
 #include <optional>
+#include <filesystem>
 /////////////////////// STD TYPE SPECIALIZATION ////////////////////////////
 template<typename T1, typename T2>
 struct std::formatter<std::pair<T1, T2>> {
@@ -62,6 +63,19 @@ struct std::formatter<std::optional<T>> {
         return out;
     }
 };
+
+template <>
+struct std::formatter<std::filesystem::path> {
+    constexpr auto parse(std::format_parse_context& ctx) {
+        return ctx.begin();
+    }
+    auto format(const std::filesystem::path& path, std::format_context& ctx) const {
+        auto out = ctx.out();
+        out = std::format_to(out, "{}", path.string());
+        return out;
+    }
+};
+
 
 /////////////////////// STD TYPE SPECIALIZATION ////////////////////////////
 void print() {
