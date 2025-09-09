@@ -31,4 +31,8 @@ int main() {
         auto p = std::make_unique<int>(4);
         std::println("[std] unique_ptr: {}", p);
     }
+    {
+        std::complex<double> c{3.4, 3};
+        std::println("[std] complex: {}", c);
+    }
 }

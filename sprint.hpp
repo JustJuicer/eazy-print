@@ -8,6 +8,7 @@
 #include <optional>
 #include <filesystem>
 #include <memory>
+#include <complex>
 /////////////////////// STD TYPE SPECIALIZATION ////////////////////////////
 template<typename T1, typename T2>
 struct std::formatter<std::pair<T1, T2>> {
@@ -103,6 +104,17 @@ struct std::formatter<std::unique_ptr<T>> {
     }
 };
 
+template <typename T>
+struct std::formatter<std::complex<T>> {
+    constexpr auto parse(std::format_parse_context& ctx) {
+        return ctx.begin();
+    }
+    auto format(const std::complex<T>& t, std::format_context& ctx) const {
+        auto out = ctx.out();
+        out = std::format_to(out, "({}, {})", t.real(), t.imag());
+        return out;
+    }
+};
 /////////////////////// STD TYPE SPECIALIZATION ////////////////////////////
 void print() {
 
