@@ -4,6 +4,8 @@
 
 #ifndef SPRINT_HPP
 #include <format>
+#include <tuple>
+#include <optional>
 /////////////////////// STD TYPE SPECIALIZATION ////////////////////////////
 template<typename T1, typename T2>
 struct std::formatter<std::pair<T1, T2>> {
@@ -16,7 +18,6 @@ struct std::formatter<std::pair<T1, T2>> {
         return out;
     }
 };
-
 
 template <typename ...Args>
 struct std::formatter<std::tuple<Args...>> {
@@ -41,6 +42,23 @@ struct std::formatter<std::tuple<Args...>> {
             }, std::forward<Args_>(args)...);
         } , tuple);
         out = std::format_to(out, ")");
+        return out;
+    }
+};
+
+
+template <typename T>
+struct std::formatter<std::optional<T>> {
+    constexpr auto parse(std::format_parse_context& ctx) {
+        return ctx.begin();
+    }
+    auto format(const std::optional<T>& t, std::format_context& ctx) const {
+        auto out = ctx.out();
+        if (t.has_value()) {
+            out = std::format_to(out, "{}", t.value());
+        } else {
+            out = std::format_to(out, "None");
+        }
         return out;
     }
 };

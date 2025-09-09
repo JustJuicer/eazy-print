@@ -12,4 +12,10 @@ int main() {
         std::tuple tp {std::tuple{2, 3.5}, 2.3, std::pair{23, 4}};
         std::println("[std]: tuple: {}", tp);
     }
+    {
+        std::optional<int> opt1;
+        std::optional<int> opt2{3};
+        std::println("[std]: optional none: {}", opt1);
+        std::println("[std]: optional value: {}", opt2);
+    }
 }
