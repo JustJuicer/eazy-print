@@ -5,10 +5,10 @@
 - tuple<...Args>      √
 - optional\<T\>       √
 - filesystem::path    √
-- shared_ptr
-- unique_ptr
-- complex
-- chrono
+- shared_ptr          √
+- unique_ptr          √
+- complex             √
+- chrono              √
   - milliseconds
   - seconds
   - minutes

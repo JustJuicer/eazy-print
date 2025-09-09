@@ -35,4 +35,7 @@ int main() {
         std::complex<double> c{3.4, 3};
         std::println("[std] complex: {}", c);
     }
+    {
+        std::println("{}", std::chrono::microseconds(3));
+    }
 }

@@ -115,6 +115,9 @@ struct std::formatter<std::complex<T>> {
         return out;
     }
 };
+
+// chrono has already been able to format by std formatter
+
 /////////////////////// STD TYPE SPECIALIZATION ////////////////////////////
 void print() {
 
