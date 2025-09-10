@@ -51,10 +51,17 @@ int main() {
         std::println("range test");
         std::vector v{1, 2, 3, 4};
         std::deque<std::vector<int>> d{{2, 3}, {5, 6}, {7}};
-        Tag tag{3};
-        ::print(std::cout, v);
-        ::print(std::cout, d);
-        ::print(std::cout, tag);
-        ::print(std::cout, std::pair{3, 4});
+        Tag tag{14};
+        println(tag);
+        println(v);
+        println(std::pair{v, std::tuple{std::make_shared<Tag>(35), tag, d}});
+    }
+    {
+        class Tag {
+            public:
+            Tag(int a): data(a) {}
+            int data;
+        };
+        println(Tag{3});
     }
 }
