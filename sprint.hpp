@@ -65,7 +65,30 @@ namespace Concept {
     concept string_like = stringlike::string_like<T>;
 
 
+namespace std_t {
+    template<typename T, template <typename...> class Template>
+    struct is_instance_of : std::false_type {};
 
+    template<template <typename...> class Template, typename ...Args>
+    struct is_instance_of<Template<Args...>, Template> : std::true_type {};
+
+    static_assert(is_instance_of<std::vector<int>, std::vector>::value);
+
+    template <typename T,  template<typename...> typename ...Types> // true if T is in Types
+    constexpr bool any_of_container = std::disjunction_v<is_instance_of<T, Types>...>;
+
+    template <typename T, typename ...Types>
+    constexpr bool any_of = std::disjunction_v<std::is_same<T, Types>...>;
+    template <typename T>
+    concept _support_std_t =
+        (any_of_container<T, std::pair, std::tuple, std::optional, std::shared_ptr, std::unique_ptr, std::complex> ||
+            any_of<T, std::filesystem::path, std::chrono::seconds, std::chrono::microseconds, std::chrono::milliseconds, std::chrono::hours, std::chrono::minutes, std::chrono::seconds> );
+
+    template <typename T>
+    concept support_std_t = _support_std_t<std::decay_t<T>>;
+
+    static_assert(support_std_t<std::tuple<int, long>>);
+}
 
 }
 
