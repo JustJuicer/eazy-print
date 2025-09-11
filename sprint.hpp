@@ -211,9 +211,11 @@ struct std::formatter<std::complex<T>> {
 
 template <typename Obj>
 void _print(std::ostream& os, Obj&& obj) {
-    if constexpr (Concept::std_t::is_instance_of<std::decay_t<Obj>, std::shared_ptr>::value) {
+    using Decay_Obj = std::decay_t<Obj>;
+
+    if constexpr (Concept::std_t::is_instance_of<Decay_Obj, std::shared_ptr>::value) {
         os << "{ address: " << static_cast<void*>(obj.get())  << ", count: " << obj.use_count() << " }";
-    } else if constexpr (Concept::std_t::is_instance_of<std::decay_t<Obj>, std::unique_ptr>::value) {
+    } else if constexpr (Concept::std_t::is_instance_of<Decay_Obj, std::unique_ptr>::value) {
         os << "{ address: " << static_cast<void*>(obj.get()) << " }";
     } else if constexpr (requires { os << std::forward<Obj>(obj); }) {
         os << std::forward<Obj>(obj);
@@ -228,46 +230,43 @@ void _print(std::ostream& os, Obj&& obj) {
             _print(os,  e);
         }
         os << ']';
-    } else if constexpr (Concept::std_t::support_std_t<Obj>){
-        using Decay_Obj = std::decay_t<Obj>;
-        if constexpr (Concept::std_t::is_instance_of<Decay_Obj, std::pair>::value) {
-            os << '(';
-            _print(os, obj.first);
-            os << ", ";
-            _print(os, obj.second);
-            os << ')';
-        } else if constexpr (Concept::std_t::is_instance_of<Decay_Obj, std::tuple>::value) {
-            auto  for_each = [](auto&& fn, auto... args) {
-                (fn(args), ...);
-            };
-            os << '(';
-            bool is_first = true;
-            std::apply([&]<typename... Args_>(Args_&&... args) {
-                for_each([&]<typename T>(T&& ele) {
-                    if (is_first) {
-                        _print(os, std::forward<T>(ele));
-                        is_first = false;
-                    } else {
-                        os << ", ";
-                        _print(os, std::forward<T>(ele));
-                    }
-                }, std::forward<Args_>(args)...);
-            } , obj);
-            os << ')';
+    } else if constexpr (Concept::std_t::is_instance_of<Decay_Obj, std::pair>::value) {
+        os << '(';
+        _print(os, obj.first);
+        os << ", ";
+        _print(os, obj.second);
+        os << ')';
+    } else if constexpr (Concept::std_t::is_instance_of<Decay_Obj, std::tuple>::value) {
+        auto  for_each = [](auto&& fn, auto... args) {
+            (fn(args), ...);
+        };
+        os << '(';
+        bool is_first = true;
+        std::apply([&]<typename... Args_>(Args_&&... args) {
+            for_each([&]<typename T>(T&& ele) {
+                if (is_first) {
+                    _print(os, std::forward<T>(ele));
+                    is_first = false;
+                } else {
+                    os << ", ";
+                    _print(os, std::forward<T>(ele));
+                }
+            }, std::forward<Args_>(args)...);
+        } , obj);
+        os << ')';
 
-        } else if constexpr (Concept::std_t::is_instance_of<Decay_Obj, std::optional>::value) {
-            if (obj.has_value()) {
-                _print(os, obj.value());
-            } else {
-                os << "None";
-            }
-        } else if constexpr (std::same_as<Decay_Obj, std::filesystem::path>) {
-          os << obj.string();
-        } else if constexpr (Concept::std_t::is_instance_of<Decay_Obj, std::complex>::value) {
-            _print(os, std::pair{obj.real(), obj.imag()});
-        } // std::shared_ptr and std::unique_ptr was printed at first, chrono type was printed at the first os << ()
-
-    } else {
+    } else if constexpr (Concept::std_t::is_instance_of<Decay_Obj, std::optional>::value) {
+        if (obj.has_value()) {
+            _print(os, obj.value());
+        } else {
+            os << "None";
+        }
+    } else if constexpr (std::same_as<Decay_Obj, std::filesystem::path>) {
+      os << obj.string();
+    } else if constexpr (Concept::std_t::is_instance_of<Decay_Obj, std::complex>::value) {
+        _print(os, std::pair{obj.real(), obj.imag()});
+    } // std::shared_ptr and std::unique_ptr was printed at first, chrono type was printed at the first os << ()
+      else {
         os << "<obj at " << static_cast<void*>(&obj) << '>';
     }
 }
