@@ -230,6 +230,8 @@ void _print(std::ostream& os, Obj&& obj) {
             _print(os,  e);
         }
         os << ']';
+    } else if constexpr (std::convertible_to<Decay_Obj, std::string>) {
+        os << static_cast<std::string>(std::forward<Obj>(obj));
     } else if constexpr (Concept::std_t::is_instance_of<Decay_Obj, std::pair>::value) {
         os << '(';
         _print(os, obj.first);

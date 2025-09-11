@@ -61,6 +61,9 @@ int main() {
             public:
             Tag(int a): data(a) {}
             int data;
+            operator std::string() const {
+                return std::to_string(data);
+            }
         };
         println(Tag{3});
     }

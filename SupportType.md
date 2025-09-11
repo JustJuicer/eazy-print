@@ -22,6 +22,7 @@
 ## Custom Type
 - class with operator <<(os&, ...)
 - class with function to_string()
+- class convertible to std::string
 - custom range
 - aggregate type
 
