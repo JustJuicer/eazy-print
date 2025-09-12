@@ -48,13 +48,17 @@ int main() {
                 return std::to_string(data);
             }
         };
-        std::println("range test");
+        println("range test");
         std::vector v{1, 2, 3, 4};
         std::deque<std::vector<int>> d{{2, 3}, {5, 6}, {7}};
         Tag tag{14};
         println(tag);
         println(v);
-        println(std::pair{v, std::tuple{std::make_shared<Tag>(35), tag, d}});
+        println(std::tuple{v, std::tuple{
+            std::make_shared<Tag>(35), tag, d, "hello world"},
+            std::optional<std::string>{"good"}
+        });
+        println(std::optional<std::string>{"str in optional"});
     }
     {
         class Tag {

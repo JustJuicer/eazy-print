@@ -45,7 +45,7 @@ namespace Concept {
         template <typename T>
         concept string_like =
             // 1. 指向字符类型的指针（C 字符串）
-            (std::is_pointer_v<T> && CharacterType<std::remove_pointer_t<T>>) ||
+            (std::is_pointer_v<T> && CharacterType<std::remove_cvref_t<std::remove_pointer_t<T>>>) ||
             // 2. 字符数组（如 char[10], const char[5]）
             (std::is_array_v<T> && CharacterType<std::remove_extent_t<T>>) ||
             // 3. std::basic_string
@@ -55,15 +55,14 @@ namespace Concept {
         static_assert(stringlike::string_like<std::string&>);
         static_assert(stringlike::string_like<std::string_view>);
         static_assert(stringlike::string_like<char[3]>);
-        static_assert(stringlike::string_like<char*>);
-        static_assert(stringlike::string_like<char16_t*>);
-        static_assert(stringlike::string_like<char8_t*>);
-        static_assert(!stringlike::string_like<std::array<int, 5>>);
+        static_assert(stringlike::string_like<const char*>);
+        static_assert(stringlike::string_like<const char16_t*>);
+        static_assert(stringlike::string_like<const volatile char8_t*>);
+        static_assert(!stringlike::string_like<const volatile std::array<int, 5>>);
     }
 
     template <typename T>
-    concept string_like = stringlike::string_like<T>;
-
+    concept string_like = stringlike::string_like<std::remove_reference_t<T>>;
 
 namespace std_t {
     template<typename T, template <typename...> class Template>
@@ -210,7 +209,7 @@ struct std::formatter<std::complex<T>> {
 
 
 template <typename Obj>
-void _print(std::ostream& os, Obj&& obj) {
+void _print(std::ostream& os, Obj&& obj, size_t depth = 0) {
     using Decay_Obj = std::decay_t<Obj>;
 
     if constexpr (Concept::std_t::is_instance_of<Decay_Obj, std::shared_ptr>::value) {
@@ -218,6 +217,12 @@ void _print(std::ostream& os, Obj&& obj) {
     } else if constexpr (Concept::std_t::is_instance_of<Decay_Obj, std::unique_ptr>::value) {
         os << "{ address: " << static_cast<void*>(obj.get()) << " }";
     } else if constexpr (requires { os << std::forward<Obj>(obj); }) {
+        if constexpr (Concept::string_like<Obj>) {
+            if (depth != 0) {
+                os << std::format("\"{}\"", std::forward<Obj>(obj));
+                return;
+            }
+        }
         os << std::forward<Obj>(obj);
     } else if constexpr (requires { std::forward<Obj>(obj).to_string(); os << std::forward<Obj>(obj).to_string(); }) {
         os << std::forward<Obj>(obj).to_string();
@@ -227,16 +232,16 @@ void _print(std::ostream& os, Obj&& obj) {
         for (auto&& e : std::forward<Obj>(obj)) {
             if (!first) os << ", ";
             first = false;
-            _print(os,  e);
+            _print(os,  e, depth + 1);
         }
         os << ']';
     } else if constexpr (std::convertible_to<Decay_Obj, std::string>) {
         os << static_cast<std::string>(std::forward<Obj>(obj));
     } else if constexpr (Concept::std_t::is_instance_of<Decay_Obj, std::pair>::value) {
         os << '(';
-        _print(os, obj.first);
+        _print(os, obj.first, depth + 1);
         os << ", ";
-        _print(os, obj.second);
+        _print(os, obj.second, depth + 1);
         os << ')';
     } else if constexpr (Concept::std_t::is_instance_of<Decay_Obj, std::tuple>::value) {
         auto  for_each = [](auto&& fn, auto... args) {
@@ -247,11 +252,11 @@ void _print(std::ostream& os, Obj&& obj) {
         std::apply([&]<typename... Args_>(Args_&&... args) {
             for_each([&]<typename T>(T&& ele) {
                 if (is_first) {
-                    _print(os, std::forward<T>(ele));
+                    _print(os, std::forward<T>(ele), depth + 1);
                     is_first = false;
                 } else {
                     os << ", ";
-                    _print(os, std::forward<T>(ele));
+                    _print(os, std::forward<T>(ele), depth + 1);
                 }
             }, std::forward<Args_>(args)...);
         } , obj);
@@ -259,16 +264,16 @@ void _print(std::ostream& os, Obj&& obj) {
 
     } else if constexpr (Concept::std_t::is_instance_of<Decay_Obj, std::optional>::value) {
         if (obj.has_value()) {
-            _print(os, obj.value());
+            _print(os, obj.value(), depth); // optional<string> don't need to be wrapped by qm;
         } else {
             os << "None";
         }
     } else if constexpr (std::same_as<Decay_Obj, std::filesystem::path>) {
       os << obj.string();
     } else if constexpr (Concept::std_t::is_instance_of<Decay_Obj, std::complex>::value) {
-        _print(os, std::pair{obj.real(), obj.imag()});
+        _print(os, std::pair{obj.real(), obj.imag()}, depth + 1);
     } // std::shared_ptr and std::unique_ptr was printed at first, chrono type was printed at the first os << ()
-      else {
+    else {
         os << "<obj at " << static_cast<void*>(&obj) << '>';
     }
 }
