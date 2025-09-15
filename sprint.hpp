@@ -207,6 +207,32 @@ struct std::formatter<std::complex<T>> {
 
 /////////////////////// STD TYPE SPECIALIZATION ////////////////////////////
 
+/////////////////////// AGGREGATE TYPE /////////////////////////////////////
+template <typename T>
+constexpr std::string_view get_raw_name() {
+#ifdef _MSC_VER
+    return __FUNCSIG__;
+#else
+    return __PRETTY_FUNCTION__;
+#endif
+}
+
+template <typename T>
+constexpr std::string_view get_type_name() { // don't pass in type with reference
+    constexpr std::string_view sample = get_raw_name<int>();
+    constexpr size_t prefix_length = sample.find("int");
+    constexpr std::string_view str = get_raw_name<T>();
+    constexpr size_t suffix_length = sample.size() - prefix_length - 3;
+    constexpr auto name =
+        str.substr(prefix_length, str.size() - prefix_length - suffix_length);
+
+    return name;
+}
+
+
+/////////////////////// AGGREGATE TYPE /////////////////////////////////////
+
+
 
 template <typename Obj>
 void _print(std::ostream& os, Obj&& obj, size_t depth = 0) {
@@ -290,6 +316,22 @@ void println(Obj&& obj) {
     std::cout.flush();
 }
 
+template <typename TypeName>
+void print() {
+    _print(std::cout, get_type_name<std::remove_reference_t<TypeName>>());
+    std::cout.flush();
+}
+
+template <typename TypeName>
+void println() {
+    _print(std::cout, get_type_name<std::remove_reference_t<TypeName>>());
+    std::cout << '\n';
+    std::cout.flush();
+}
+
+inline void println() {
+    std::cout << '\n';
+}
 #define SPRINT_HPP
 
 #endif //SPRINT_HPP
