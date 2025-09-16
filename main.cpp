@@ -88,12 +88,17 @@ int main() {
         std::println();
     }
     {
-        struct Person {
+        struct Age {
             int age;
+        };
+        struct Person {
+            Age age;
             std::string name;
             std::vector<std::string> games;
         };
         Person tag{18, "Jujinqian", {"cs", "mc"}};
+        const Person ctag{18, "Jujinqian", {"cs", "mc"}};
         println(tag);
+        println(ctag);
     }
 }

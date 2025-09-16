@@ -322,7 +322,8 @@ struct object_tuple_view_helper {
 template <class T>
 struct object_tuple_view_helper<T, 0> {
     static constexpr auto tuple_view() { return std::tie(); }
-    static constexpr auto tuple_view(T&) { return std::tie(); }
+    template <typename U>
+    static constexpr auto tuple_view(U&&) { return std::tie(); }
 };
 
 #define SPRINT_REFLECT_TUPLE_VIEW(n, ...) \
@@ -336,7 +337,8 @@ struct object_tuple_view_helper<T, n> { \
         }; \
         return std::apply(get_ptr, ref_tuple); \
     } \
-    static constexpr auto tuple_view(T& t) { \
+    template <typename U> \
+    static constexpr auto tuple_view(U&& t) { \
         auto& [__VA_ARGS__] = t; \
         return std::tie(__VA_ARGS__); \
     } \
@@ -510,7 +512,7 @@ void _print(std::ostream& os, Obj&& obj, size_t depth = 0) {
             _print(os,  e, depth + 1);
         }
         os << ']';
-    } else if constexpr (std::convertible_to<Decay_Obj, std::string>) {
+    } else if constexpr (std::convertible_to<Obj, std::string>) {
         os << static_cast<std::string>(std::forward<Obj>(obj));
     } else if constexpr (Concept::std_t::is_instance_of<Decay_Obj, std::pair>::value) {
         os << '(';
@@ -554,7 +556,7 @@ void _print(std::ostream& os, Obj&& obj, size_t depth = 0) {
         auto members_name = get_member_names<type>();
         os << get_type_name<type>() << ": { ";
         constexpr auto members_count = members_count_v<type>;
-        auto inner_printer = [&]<size_t Is>(std::integral_constant<size_t, Is>, auto member_name, auto member_value) {
+        auto inner_printer = [&]<size_t Is>(std::integral_constant<size_t, Is>, auto member_name, auto&& member_value) {
             if constexpr (Is != 0) {
                 os << ", ";
             }
@@ -567,7 +569,7 @@ void _print(std::ostream& os, Obj&& obj, size_t depth = 0) {
         os << " }";
     }
     else {
-        os << "<obj at " << static_cast<void*>(&obj) << '>';
+        os << "<obj at " << static_cast<const volatile void*>(&obj) << '>';
     }
 }
 
