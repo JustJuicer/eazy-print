@@ -554,7 +554,11 @@ void _print(std::ostream& os, Obj&& obj, size_t depth = 0) {
         using type = Decay_Obj;
         auto members = object_to_tuple(obj);
         auto members_name = get_member_names<type>();
-        os << get_type_name<type>() << ": { ";
+        if (depth != 0) {
+            os << "{ ";
+        } else {    // TODO determined by Configer
+            os << get_type_name<type>() << ": { ";
+        }
         constexpr auto members_count = members_count_v<type>;
         auto inner_printer = [&]<size_t Is>(std::integral_constant<size_t, Is>, auto member_name, auto&& member_value) {
             if constexpr (Is != 0) {
