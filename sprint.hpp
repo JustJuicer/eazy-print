@@ -557,7 +557,7 @@ void _print(std::ostream& os, Obj&& obj, size_t depth = 0) {
         if (depth != 0) {
             os << "{ ";
         } else {    // TODO determined by Configer
-            os << get_type_name<type>() << ": { ";
+            os << get_type_name<type>() << " { ";
         }
         constexpr auto members_count = members_count_v<type>;
         auto inner_printer = [&]<size_t Is>(std::integral_constant<size_t, Is>, auto member_name, auto&& member_value) {
