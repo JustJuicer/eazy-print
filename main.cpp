@@ -6,6 +6,8 @@
 #include <deque>
 #include <vector>
 #include <list>
+#include <map>
+
 int main() {
     {
         std::pair p{1, 3.4};
@@ -84,5 +86,14 @@ int main() {
         a_type_in_func(std::tuple<int, double>{});
         a_type_in_func(std::tuple<std::pair<int, std::optional<std::chrono::seconds>>, double>{});
         std::println();
+    }
+    {
+        struct Person {
+            int age;
+            std::string name;
+            std::vector<std::string> games;
+        };
+        Person tag{18, "Jujinqian", {"cs", "mc"}};
+        println(tag);
     }
 }

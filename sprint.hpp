@@ -10,7 +10,7 @@
 #include <memory>
 #include <complex>
 #include <iostream>
-
+#include <array>
 
 
 /////////////////////// CONCEPT ////////////////////////////////////////////
@@ -90,7 +90,6 @@ namespace std_t {
 }
 
 }
-
 
 
 /////////////////////// CONCEPT ////////////////////////////////////////////
@@ -228,11 +227,261 @@ constexpr std::string_view get_type_name() { // don't pass in type with referenc
 
     return name;
 }
+//---members_count---start
+namespace detail {
+    struct UniversalType {
+        template <typename T>
+        operator T();
+    };
 
+    template <typename T, typename UniversalParam, typename = void, typename ...Args>
+    struct is_constructable: std::false_type {};
+
+    template <typename T, typename UniversalParam, typename ...Args>
+    struct is_constructable<
+        T,
+        UniversalParam,
+        std::void_t<decltype(T{{Args{}}..., {UniversalParam{}}})>,
+        Args...> : std::true_type {};
+
+    template <typename T, typename UniversalParam, typename ...Args>
+    constexpr bool is_constructable_v = is_constructable<T, UniversalParam, void, Args...>::value;
+
+    template <typename T, typename ...Args>
+    constexpr size_t members_count_impl() {
+        if constexpr (is_constructable_v<T, UniversalType, Args...>) {
+            return members_count_impl<T, Args..., UniversalType>();
+        } else {
+            return sizeof...(Args);
+        }
+    }
+}
+
+template <typename T>
+requires std::is_aggregate_v<T>
+constexpr size_t members_count() {
+    if constexpr (std::is_empty_v<T>) {
+        return 0;
+    } else {
+        return detail::members_count_impl<T>();
+    }
+}
+template <typename T>
+constexpr size_t members_count_v = members_count<T>();
+//---members_count---end
+
+//---members_name---start
+template <auto ptr>
+inline constexpr std::string_view get_member_name() {
+#if defined(_MSC_VER)
+    constexpr std::string_view func_name = __FUNCSIG__;
+#else
+    constexpr std::string_view func_name = __PRETTY_FUNCTION__;
+#endif
+
+#if defined(__clang__)
+    auto split = func_name.substr(0, func_name.size() - 2);
+    return split.substr(split.find_last_of(":.") + 1);
+#elif defined(__GNUC__)
+    auto split = func_name.substr(0, func_name.rfind(")}"));
+    return split.substr(split.find_last_of(":") + 1);
+#elif defined(_MSC_VER)
+    auto split = func_name.substr(0, func_name.rfind("}>"));
+    return split.substr(split.rfind("->") + 2);
+#else
+    static_assert(false,
+                  "You are using an unsupported compiler. Please use GCC, Clang "
+                  "or MSVC or switch to the rfl::Field-syntax.");
+#endif
+}
+
+template <typename T>
+struct wrapper {
+    inline static std::remove_cvref_t<T> value;
+};
+
+template <class T>
+inline constexpr std::remove_cvref_t<T>& get_fake_object() noexcept {
+    // return wrapper<std::remove_cvref_t<T>>::value;
+    return wrapper<T>::value; //Change
+}
+
+template <class T, std::size_t n>
+struct object_tuple_view_helper {
+    static constexpr auto tuple_view() {
+        static_assert(
+            sizeof(T) < 0,
+            "\n\nThis error occurs for one of two reasons:\n\n"
+            "1) You have created a struct with too many fields, which is "
+            "unsupported. \n\n"
+            "2) Your struct is not an aggregate type. You can make it aggregated, "
+            "or defined a YLT_REFL macro. \n\n");
+    }
+};
+
+template <class T>
+struct object_tuple_view_helper<T, 0> {
+    static constexpr auto tuple_view() { return std::tie(); }
+    static constexpr auto tuple_view(T&) { return std::tie(); }
+};
+
+#define SPRINT_REFLECT_TUPLE_VIEW(n, ...) \
+template <typename T> \
+struct object_tuple_view_helper<T, n> { \
+    static constexpr auto tuple_view() { \
+        auto&[__VA_ARGS__] = get_fake_object<T>(); \
+        auto ref_tuple = std::tie(__VA_ARGS__); \
+        auto get_ptr = [] (auto&... fake_obj_ref) { \
+            return std::make_tuple(&fake_obj_ref...); \
+        }; \
+        return std::apply(get_ptr, ref_tuple); \
+    } \
+    static constexpr auto tuple_view(T& t) { \
+        auto& [__VA_ARGS__] = t; \
+        return std::tie(__VA_ARGS__); \
+    } \
+};
+
+////////////////// generate macros ////////////////////
+
+#ifndef __IDE_HELPER__a3b1f75c2e4d9a87bb5f6d0c94ef2176
+
+SPRINT_REFLECT_TUPLE_VIEW(1, f0);
+SPRINT_REFLECT_TUPLE_VIEW(2, f0, f1);
+SPRINT_REFLECT_TUPLE_VIEW(3, f0, f1, f2);
+SPRINT_REFLECT_TUPLE_VIEW(
+    4, f0, f1, f2, f3);
+SPRINT_REFLECT_TUPLE_VIEW(
+    5, f0, f1, f2, f3, f4);
+SPRINT_REFLECT_TUPLE_VIEW(
+    6, f0, f1, f2, f3, f4, f5);
+SPRINT_REFLECT_TUPLE_VIEW(
+    7, f0, f1, f2, f3, f4, f5, f6);
+SPRINT_REFLECT_TUPLE_VIEW(
+    8, f0, f1, f2, f3, f4, f5, f6, f7);
+SPRINT_REFLECT_TUPLE_VIEW(
+    9, f0, f1, f2, f3, f4, f5, f6, f7, f8);
+SPRINT_REFLECT_TUPLE_VIEW(
+    10, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9);
+SPRINT_REFLECT_TUPLE_VIEW(
+    11, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10);
+SPRINT_REFLECT_TUPLE_VIEW(
+    12, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11);
+SPRINT_REFLECT_TUPLE_VIEW(
+    13, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12);
+SPRINT_REFLECT_TUPLE_VIEW(
+    14, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13);
+SPRINT_REFLECT_TUPLE_VIEW(
+    15, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14);
+SPRINT_REFLECT_TUPLE_VIEW(
+    16, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15);
+SPRINT_REFLECT_TUPLE_VIEW(
+    17, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15,
+    f16);
+SPRINT_REFLECT_TUPLE_VIEW(
+    18, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15,
+    f16, f17);
+SPRINT_REFLECT_TUPLE_VIEW(
+    19, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15,
+    f16, f17, f18);
+SPRINT_REFLECT_TUPLE_VIEW(
+    20, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15,
+    f16, f17, f18, f19);
+SPRINT_REFLECT_TUPLE_VIEW(
+    21, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15,
+    f16, f17, f18, f19, f20);
+SPRINT_REFLECT_TUPLE_VIEW(
+    22, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15,
+    f16, f17, f18, f19, f20, f21);
+SPRINT_REFLECT_TUPLE_VIEW(
+    23, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15,
+    f16, f17, f18, f19, f20, f21, f22);
+SPRINT_REFLECT_TUPLE_VIEW(
+    24, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15,
+    f16, f17, f18, f19, f20, f21, f22, f23);
+SPRINT_REFLECT_TUPLE_VIEW(
+    25, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15,
+    f16, f17, f18, f19, f20, f21, f22, f23, f24);
+SPRINT_REFLECT_TUPLE_VIEW(
+    26, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15,
+    f16, f17, f18, f19, f20, f21, f22, f23, f24, f25);
+SPRINT_REFLECT_TUPLE_VIEW(
+    27, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15,
+    f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26);
+SPRINT_REFLECT_TUPLE_VIEW(
+    28, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15,
+    f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27);
+SPRINT_REFLECT_TUPLE_VIEW(
+    29, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15,
+    f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28);
+SPRINT_REFLECT_TUPLE_VIEW(
+    30, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15,
+    f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29);
+SPRINT_REFLECT_TUPLE_VIEW(
+    31, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15,
+    f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30);
+SPRINT_REFLECT_TUPLE_VIEW(
+    32, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15,
+    f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30,
+    f31);
+SPRINT_REFLECT_TUPLE_VIEW(
+    33, f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15,
+    f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28, f29, f30,
+    f31, f32);
+
+#endif
+
+////////////////// generate macros ////////////////////
+template <class T>
+struct Wrapper {
+    using Type = T;
+    T v;
+};
+
+template <class T>
+Wrapper(T) -> Wrapper<T>;
+
+// This workaround is necessary for clang.
+template <class T>
+inline constexpr auto wrap(const T& arg) noexcept {
+    return Wrapper{arg};
+}
+
+
+template <typename T>
+inline constexpr auto struct_to_tuple() {
+    return object_tuple_view_helper<T, members_count_v<T>>::tuple_view();
+}
+
+template <typename _Ty>
+inline constexpr std::array<std::string_view, members_count_v<_Ty>>
+get_member_names() {
+    constexpr size_t member_count = members_count<_Ty>();
+    using T = std::remove_cvref_t<_Ty>;
+    std::array<std::string_view, member_count> arr;
+    constexpr auto tp = struct_to_tuple<T>();
+    [&]<size_t... Is>(std::index_sequence<Is...>){ //Change
+        ((arr[Is] = get_member_name<wrap(std::get<Is>(tp))>()), ...);
+    }(std::make_index_sequence<member_count>{});
+    return arr;
+}
+
+
+template <typename T>
+constexpr auto object_to_tuple(T&& obj) {
+    using type = std::decay_t<T>;
+    return object_tuple_view_helper<type, members_count_v<type>>::tuple_view(obj);
+}
+
+//---members_name---end
 
 /////////////////////// AGGREGATE TYPE /////////////////////////////////////
 
+template <typename T>
+void _print_object(std::ostream& os, T&& obj) {
 
+
+}
 
 template <typename Obj>
 void _print(std::ostream& os, Obj&& obj, size_t depth = 0) {
@@ -299,6 +548,24 @@ void _print(std::ostream& os, Obj&& obj, size_t depth = 0) {
     } else if constexpr (Concept::std_t::is_instance_of<Decay_Obj, std::complex>::value) {
         _print(os, std::pair{obj.real(), obj.imag()}, depth + 1);
     } // std::shared_ptr and std::unique_ptr was printed at first, chrono type was printed at the first os << ()
+    else if constexpr (std::is_aggregate_v<Decay_Obj>) {
+        using type = Decay_Obj;
+        auto members = object_to_tuple(obj);
+        auto members_name = get_member_names<type>();
+        os << get_type_name<type>() << ": { ";
+        constexpr auto members_count = members_count_v<type>;
+        auto inner_printer = [&]<size_t Is>(std::integral_constant<size_t, Is>, auto member_name, auto member_value) {
+            if constexpr (Is != 0) {
+                os << ", ";
+            }
+            os << member_name << ": ";
+            _print(os, member_value, depth + 1);;
+        };
+        [&]<size_t ...Is>(std::index_sequence<Is...>){
+            (inner_printer(std::integral_constant<size_t, Is>{}, std::get<Is>(members_name) , std::get<Is>(members)), ...);
+        }(std::make_index_sequence<members_count>{});
+        os << " }";
+    }
     else {
         os << "<obj at " << static_cast<void*>(&obj) << '>';
     }
