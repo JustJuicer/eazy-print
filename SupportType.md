@@ -18,6 +18,7 @@
   - array
   - deque
   - ...
+- std map !
 
 ## Custom Type
 - class with operator <<(os&, ...)
