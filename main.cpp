@@ -101,4 +101,16 @@ int main() {
         println(tag);
         println(ctag);
     }
+    {
+        class Person {
+            int age_;
+        public:
+            Person(int age): age_(age) {}
+            int age(){ return age_;}
+        };
+        Person p{3};
+        const Person cp{3};
+        println(p);
+        println(cp);
+    }
 }
