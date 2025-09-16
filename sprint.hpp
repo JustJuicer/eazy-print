@@ -479,11 +479,6 @@ constexpr auto object_to_tuple(T&& obj) {
 
 /////////////////////// AGGREGATE TYPE /////////////////////////////////////
 
-template <typename T>
-void _print_object(std::ostream& os, T&& obj) {
-
-
-}
 
 template <typename Obj>
 void _print(std::ostream& os, Obj&& obj, size_t depth = 0) {
