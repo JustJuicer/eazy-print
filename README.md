@@ -1,5 +1,5 @@
 # Only Header Eazy Print
-
+Requires C++20
 # Function
 ```c++
 template <typename ...Args>
