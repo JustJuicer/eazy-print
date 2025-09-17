@@ -76,7 +76,7 @@ int main() {
     { // print type name test
         auto a_type_in_func = []<typename T>(T&& obj){
             print("raw: ");
-            println(get_raw_name<const std::decay_t<T>>());
+            println(inner::get_raw_name<const std::decay_t<T>>());
             print("get: ");
             println<const T>();
         };

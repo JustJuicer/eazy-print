@@ -200,7 +200,7 @@ struct std::formatter<std::complex<T>> {
 // chrono has already been able to format by std formatter
 
 /////////////////////// STD TYPE SPECIALIZATION ////////////////////////////
-
+namespace inner {
 /////////////////////// AGGREGATE TYPE /////////////////////////////////////
 template <typename T>
 constexpr std::string_view get_raw_name() {
@@ -581,15 +581,15 @@ void _print(std::ostream& os, Obj&& obj, size_t depth = 0) {
         os << "<obj at " << static_cast<const volatile void*>(&obj) << '>';
     }
 }
-
+}
 template <typename Obj>
 void print(Obj&& obj) {
-    _print(std::cout, std::forward<Obj>(obj));
+    inner::_print(std::cout, std::forward<Obj>(obj));
     std::cout.flush();
 }
 template <typename Obj>
 void println(Obj&& obj) {
-    _print(std::cout, std::forward<Obj>(obj));
+    inner::_print(std::cout, std::forward<Obj>(obj));
     std::cout << '\n';
     std::cout.flush();
 }
@@ -607,13 +607,13 @@ void println(Args&&... args) {
 
 template <typename TypeName>
 void print() {
-    _print(std::cout, get_type_name<std::remove_reference_t<TypeName>>());
+    inner::_print(std::cout, inner::get_type_name<std::remove_reference_t<TypeName>>());
     std::cout.flush();
 }
 
 template <typename TypeName>
 void println() {
-    _print(std::cout, get_type_name<std::remove_reference_t<TypeName>>());
+    inner::_print(std::cout, inner::get_type_name<std::remove_reference_t<TypeName>>());
     std::cout << '\n';
     std::cout.flush();
 }
