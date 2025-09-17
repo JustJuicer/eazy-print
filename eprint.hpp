@@ -619,6 +619,8 @@ void println() {
     std::cout.flush();
 }
 
+#define ju_tostring(x) #x
+#define ju_dbg(e) ju::println(ju_tostring(e), ": ", e)
 
 }
 #define EPRINT_HPP
