@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(sprint)
+project(eprint)
 set(pname ${PROJECT_NAME})
 
 set(CMAKE_CXX_STANDARD 20)
