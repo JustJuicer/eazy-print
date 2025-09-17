@@ -8,40 +8,44 @@
 #include <list>
 #include <map>
 using namespace ju;
+_EXPORT_STD template <class... _Types>
+void println_(std::format_string<_Types...> _Fmt, _Types&&... _Args) {
+    std::cout << std::format(_Fmt, std::forward<_Types>(_Args)...) << '\n';
+}
 int main() {
     {
         std::pair p{1, 3.4};
-        std::println("[std] pair: {}", p);
+        println_("[std] pair: {}", p);
     }
     {
         std::tuple tp {std::tuple{2, 3.5}, 2.3, std::pair{23, 4}};
-        std::println("[std] tuple: {}", tp);
+        println_("[std] tuple: {}", tp);
     }
     {
         std::optional<int> opt1;
         std::optional<int> opt2{3};
-        std::println("[std] optional none: {}", opt1);
-        std::println("[std] optional value: {}", opt2);
+        println_("[std] optional none: {}", opt1);
+        println_("[std] optional value: {}", opt2);
     }
     {
         std::filesystem::path p{"A/B/C/D"};
-        std::println("[std] path: {}", p);
+        println_("[std] path: {}", p);
     }
     {
         auto p = std::make_shared<int>(3);
         auto c = p;
-        std::println("[std] shared_ptr: {}", p);
+        println_("[std] shared_ptr: {}", p);
     }
     {
         auto p = std::make_unique<int>(4);
-        std::println("[std] unique_ptr: {}", p);
+        println_("[std] unique_ptr: {}", p);
     }
     {
         std::complex<double> c{3.4, 3};
-        std::println("[std] complex: {}", c);
+        println_("[std] complex: {}", c);
     }
     {
-        std::println("{}", std::chrono::microseconds(3));
+        println_("{}", std::chrono::microseconds(3));
     }
     {
         struct Tag {
@@ -75,9 +79,7 @@ int main() {
     }
     { // print type name test
         auto a_type_in_func = []<typename T>(T&& obj){
-            print("raw: ");
-            println(_inner::get_raw_name<const std::decay_t<T>>());
-            print("get: ");
+            print("type: ");
             println<const T>();
         };
 
@@ -85,7 +87,7 @@ int main() {
         a_type_in_func(34.f);
         a_type_in_func(std::tuple<int, double>{});
         a_type_in_func(std::tuple<std::pair<int, std::optional<std::chrono::seconds>>, double>{});
-        std::println();
+        println_("");
     }
     {
         struct Age {
