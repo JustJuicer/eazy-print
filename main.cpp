@@ -123,6 +123,6 @@ int main() {
     {
         int a;
         println("This is ",a,"(int)");
-        ju::print();
+        ju::println();
     }
 }

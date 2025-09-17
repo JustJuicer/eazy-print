@@ -619,9 +619,6 @@ void println() {
     std::cout.flush();
 }
 
-inline void println() {
-    std::cout << '\n';
-}
 
 }
 #define SPRINT_HPP
