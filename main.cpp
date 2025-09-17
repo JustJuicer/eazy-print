@@ -118,5 +118,10 @@ int main() {
         std::multimap<int, std::string> mmp{{1, "good1"}, {2, "good"}, {2, "good3"}};
         println(mp);
         println(mmp);
+        println(std::multimap<int, std::string_view>{{1, "good1"}, {2, "good"}, {2, "good3"}});
+    }
+    {
+        int a;
+        println("This is ",a,"(int)");
     }
 }

@@ -570,7 +570,7 @@ void _print(std::ostream& os, Obj&& obj, size_t depth = 0) {
                 os << ", ";
             }
             os << member_name << ": ";
-            _print(os, member_value, depth + 1);;
+            _print(os, std::forward<decltype(member_value)>(member_value), depth + 1);;
         };
         [&]<size_t ...Is>(std::index_sequence<Is...>){
             (inner_printer(std::integral_constant<size_t, Is>{}, std::get<Is>(members_name) , std::get<Is>(members)), ...);
@@ -593,6 +593,17 @@ void println(Obj&& obj) {
     std::cout << '\n';
     std::cout.flush();
 }
+
+template <typename ...Args>
+void print(Args&&... args) {
+    (print(std::forward<Args>(args)), ...);
+}
+template <typename ...Args>
+void println(Args&&... args) {
+    (print(std::forward<Args>(args)), ...);
+    std::cout << '\n';
+}
+
 
 template <typename TypeName>
 void print() {
