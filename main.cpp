@@ -127,4 +127,8 @@ int main() {
         println("This is ",a,"(int)");
         ju::println();
     }
+    {
+        std::vector<int> vec{3, 4, 5};
+        ju_dbg(vec);
+    }
 }
