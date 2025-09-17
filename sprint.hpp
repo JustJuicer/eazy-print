@@ -11,7 +11,8 @@
 #include <complex>
 #include <iostream>
 #include <array>
-
+#include <map>
+#include <unordered_map>
 
 /////////////////////// CONCEPT ////////////////////////////////////////////
 
@@ -78,15 +79,9 @@ namespace std_t {
 
     template <typename T, typename ...Types>
     constexpr bool any_of = std::disjunction_v<std::is_same<T, Types>...>;
-    template <typename T>
-    concept _support_std_t =
-        (any_of_container<T, std::pair, std::tuple, std::optional, std::shared_ptr, std::unique_ptr, std::complex> ||
-            any_of<T, std::filesystem::path, std::chrono::seconds, std::chrono::microseconds, std::chrono::milliseconds, std::chrono::hours, std::chrono::minutes, std::chrono::seconds> );
 
     template <typename T>
-    concept support_std_t = _support_std_t<std::decay_t<T>>;
-
-    static_assert(support_std_t<std::tuple<int, long>>);
+    concept is_map = any_of_container<T, std::map, std::multimap, std::unordered_map, std::unordered_multimap>;
 }
 
 }
@@ -498,6 +493,21 @@ void _print(std::ostream& os, Obj&& obj, size_t depth = 0) {
         os << std::forward<Obj>(obj);
     } else if constexpr (requires { std::forward<Obj>(obj).to_string(); os << std::forward<Obj>(obj).to_string(); }) {
         os << std::forward<Obj>(obj).to_string();
+    }
+    else if constexpr (Concept::std_t::is_map<Decay_Obj>) {
+        os << "{ ";
+        bool is_first = true;
+        for (auto&& pair : std::forward<Obj>(obj)) {
+            if (!is_first) {
+                os << ", ";
+            }
+            is_first = false;
+
+            _print(os, pair.first, depth + 1);
+            os << ": ";
+            _print(os, pair.second, depth + 1);
+        }
+        os << " }";
     } else if constexpr (std::ranges::range<Obj>) {
         os << '[';
         bool first = true;

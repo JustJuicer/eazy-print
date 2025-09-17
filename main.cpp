@@ -113,4 +113,10 @@ int main() {
         println(p);
         println(cp);
     }
+    {
+        std::map<int, std::string> mp{{1, "good1"}, {3, "good"}, {4, "good3"}};
+        std::multimap<int, std::string> mmp{{1, "good1"}, {2, "good"}, {2, "good3"}};
+        println(mp);
+        println(mmp);
+    }
 }
