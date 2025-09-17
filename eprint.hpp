@@ -2,7 +2,7 @@
 // Created by jujin on 25-9-9.
 //
 
-#ifndef SPRINT_HPP
+#ifndef EPRINT_HPP
 #include <format>
 #include <tuple>
 #include <optional>
@@ -621,6 +621,6 @@ void println() {
 
 
 }
-#define SPRINT_HPP
+#define EPRINT_HPP
 
 #endif //SPRINT_HPP
