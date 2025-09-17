@@ -13,10 +13,9 @@
 #include <array>
 #include <map>
 #include <unordered_map>
-
 /////////////////////// CONCEPT ////////////////////////////////////////////
-
-namespace Concept {
+namespace ju {
+namespace _concept {
     namespace stringlike{
         template <typename CharT>
         concept CharacterType = std::same_as<CharT, char> ||
@@ -86,7 +85,7 @@ namespace std_t {
 
 }
 
-
+}
 /////////////////////// CONCEPT ////////////////////////////////////////////
 
 
@@ -200,7 +199,9 @@ struct std::formatter<std::complex<T>> {
 // chrono has already been able to format by std formatter
 
 /////////////////////// STD TYPE SPECIALIZATION ////////////////////////////
-namespace inner {
+namespace ju {
+
+namespace _inner {
 /////////////////////// AGGREGATE TYPE /////////////////////////////////////
 template <typename T>
 constexpr std::string_view get_raw_name() {
@@ -479,12 +480,12 @@ template <typename Obj>
 void _print(std::ostream& os, Obj&& obj, size_t depth = 0) {
     using Decay_Obj = std::decay_t<Obj>;
 
-    if constexpr (Concept::std_t::is_instance_of<Decay_Obj, std::shared_ptr>::value) {
+    if constexpr (_concept::std_t::is_instance_of<Decay_Obj, std::shared_ptr>::value) {
         os << "{ address: " << static_cast<void*>(obj.get())  << ", count: " << obj.use_count() << " }";
-    } else if constexpr (Concept::std_t::is_instance_of<Decay_Obj, std::unique_ptr>::value) {
+    } else if constexpr (_concept::std_t::is_instance_of<Decay_Obj, std::unique_ptr>::value) {
         os << "{ address: " << static_cast<void*>(obj.get()) << " }";
     } else if constexpr (requires { os << std::forward<Obj>(obj); }) {
-        if constexpr (Concept::string_like<Obj>) {
+        if constexpr (_concept::string_like<Obj>) {
             if (depth != 0) {
                 os << std::format("\"{}\"", std::forward<Obj>(obj));
                 return;
@@ -494,7 +495,7 @@ void _print(std::ostream& os, Obj&& obj, size_t depth = 0) {
     } else if constexpr (requires { std::forward<Obj>(obj).to_string(); os << std::forward<Obj>(obj).to_string(); }) {
         os << std::forward<Obj>(obj).to_string();
     }
-    else if constexpr (Concept::std_t::is_map<Decay_Obj>) {
+    else if constexpr (_concept::std_t::is_map<Decay_Obj>) {
         os << "{ ";
         bool is_first = true;
         for (auto&& pair : std::forward<Obj>(obj)) {
@@ -519,13 +520,13 @@ void _print(std::ostream& os, Obj&& obj, size_t depth = 0) {
         os << ']';
     } else if constexpr (std::convertible_to<Obj, std::string>) {
         os << static_cast<std::string>(std::forward<Obj>(obj));
-    } else if constexpr (Concept::std_t::is_instance_of<Decay_Obj, std::pair>::value) {
+    } else if constexpr (_concept::std_t::is_instance_of<Decay_Obj, std::pair>::value) {
         os << '(';
         _print(os, obj.first, depth + 1);
         os << ", ";
         _print(os, obj.second, depth + 1);
         os << ')';
-    } else if constexpr (Concept::std_t::is_instance_of<Decay_Obj, std::tuple>::value) {
+    } else if constexpr (_concept::std_t::is_instance_of<Decay_Obj, std::tuple>::value) {
         auto  for_each = [](auto&& fn, auto... args) {
             (fn(args), ...);
         };
@@ -544,7 +545,7 @@ void _print(std::ostream& os, Obj&& obj, size_t depth = 0) {
         } , obj);
         os << ')';
 
-    } else if constexpr (Concept::std_t::is_instance_of<Decay_Obj, std::optional>::value) {
+    } else if constexpr (_concept::std_t::is_instance_of<Decay_Obj, std::optional>::value) {
         if (obj.has_value()) {
             _print(os, obj.value(), depth); // optional<string> don't need to be wrapped by qm;
         } else {
@@ -552,7 +553,7 @@ void _print(std::ostream& os, Obj&& obj, size_t depth = 0) {
         }
     } else if constexpr (std::same_as<Decay_Obj, std::filesystem::path>) {
       os << obj.string();
-    } else if constexpr (Concept::std_t::is_instance_of<Decay_Obj, std::complex>::value) {
+    } else if constexpr (_concept::std_t::is_instance_of<Decay_Obj, std::complex>::value) {
         _print(os, std::pair{obj.real(), obj.imag()}, depth + 1);
     } // std::shared_ptr and std::unique_ptr was printed at first, chrono type was printed at the first os << ()
     else if constexpr (std::is_aggregate_v<Decay_Obj>) {
@@ -584,12 +585,12 @@ void _print(std::ostream& os, Obj&& obj, size_t depth = 0) {
 }
 template <typename Obj>
 void print(Obj&& obj) {
-    inner::_print(std::cout, std::forward<Obj>(obj));
+    _inner::_print(std::cout, std::forward<Obj>(obj));
     std::cout.flush();
 }
 template <typename Obj>
 void println(Obj&& obj) {
-    inner::_print(std::cout, std::forward<Obj>(obj));
+    _inner::_print(std::cout, std::forward<Obj>(obj));
     std::cout << '\n';
     std::cout.flush();
 }
@@ -607,19 +608,21 @@ void println(Args&&... args) {
 
 template <typename TypeName>
 void print() {
-    inner::_print(std::cout, inner::get_type_name<std::remove_reference_t<TypeName>>());
+    _inner::_print(std::cout, _inner::get_type_name<std::remove_reference_t<TypeName>>());
     std::cout.flush();
 }
 
 template <typename TypeName>
 void println() {
-    inner::_print(std::cout, inner::get_type_name<std::remove_reference_t<TypeName>>());
+    _inner::_print(std::cout, _inner::get_type_name<std::remove_reference_t<TypeName>>());
     std::cout << '\n';
     std::cout.flush();
 }
 
 inline void println() {
     std::cout << '\n';
+}
+
 }
 #define SPRINT_HPP
 

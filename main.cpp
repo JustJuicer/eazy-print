@@ -7,7 +7,7 @@
 #include <vector>
 #include <list>
 #include <map>
-
+using namespace ju;
 int main() {
     {
         std::pair p{1, 3.4};
@@ -76,7 +76,7 @@ int main() {
     { // print type name test
         auto a_type_in_func = []<typename T>(T&& obj){
             print("raw: ");
-            println(inner::get_raw_name<const std::decay_t<T>>());
+            println(_inner::get_raw_name<const std::decay_t<T>>());
             print("get: ");
             println<const T>();
         };
@@ -123,5 +123,6 @@ int main() {
     {
         int a;
         println("This is ",a,"(int)");
+        ju::print();
     }
 }
