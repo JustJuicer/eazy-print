@@ -1,3 +1,5 @@
+# Only Header Eazy Print
+
 # Function
 ```c++
 template <typename ...Args>
