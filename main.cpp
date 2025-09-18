@@ -131,4 +131,9 @@ int main() {
         std::vector<int> vec{3, 4, 5};
         ju_dbg(vec);
     }
+    {
+        std::stringstream ss;
+        ju::println(static_cast<std::ostream&>(ss), "hello world", "\n");
+        ju::println("ss: ", ss.str());
+    }
 }

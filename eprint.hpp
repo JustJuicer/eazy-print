@@ -579,7 +579,7 @@ void _print(std::ostream& os, Obj&& obj, size_t depth = 0) {
         os << " }";
     }
     else {
-        os << "<obj at " << static_cast<const volatile void*>(&obj) << '>';
+        os << "<obj at " << static_cast<const void*>(&obj) << '>';
     }
 }
 }
@@ -594,7 +594,17 @@ void println(Obj&& obj) {
     std::cout << '\n';
     std::cout.flush();
 }
-
+template <typename Obj>
+void print(std::ostream& os, Obj&& obj) {
+    _inner::_print(os, std::forward<Obj>(obj));
+    os.flush();
+}
+template <typename Obj>
+void println(std::ostream& os, Obj&& obj) {
+    _inner::_print(os, std::forward<Obj>(obj));
+    os << '\n';
+    os.flush();
+}
 template <typename ...Args>
 void print(Args&&... args) {
     (print(std::forward<Args>(args)), ...);
@@ -602,6 +612,15 @@ void print(Args&&... args) {
 template <typename ...Args>
 void println(Args&&... args) {
     (print(std::forward<Args>(args)), ...);
+    std::cout << '\n';
+}
+template <typename ...Args>
+void print(std::ostream& os, Args&&... args) {
+    (print(os, std::forward<Args>(args)), ...);
+}
+template <typename ...Args>
+void println(std::ostream& os, Args&&... args) {
+    (print(os, std::forward<Args>(args)), ...);
     std::cout << '\n';
 }
 
