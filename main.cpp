@@ -8,7 +8,7 @@
 #include <list>
 #include <map>
 using namespace ju;
-_EXPORT_STD template <class... _Types>
+template <class... _Types>
 void println_(std::format_string<_Types...> _Fmt, _Types&&... _Args) {
     std::cout << std::format(_Fmt, std::forward<_Types>(_Args)...) << '\n';
 }
@@ -135,5 +135,13 @@ int main() {
         std::stringstream ss;
         ju::println(static_cast<std::ostream&>(ss), "hello world", "\n");
         ju::println("ss: ", ss.str());
+    }
+    {
+        auto obj = std::tuple{
+            std::pair{ 3, []{ return 3; }},
+            std::optional<std::string>{"hello world"},
+            std::vector{ std::vector{3,4,5}, std::vector{5, 4, 3}}
+        };
+        ju_dbg(obj);
     }
 }
