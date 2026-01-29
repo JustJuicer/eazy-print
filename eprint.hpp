@@ -580,7 +580,7 @@ void _print(std::ostream& os, Obj&& obj, size_t depth = 0) {
         os << " }";
     }
     else {
-        os << "<obj at " << static_cast<const void*>(&obj) << '>';
+        os << "<" << get_type_name<Decay_Obj> << " at " << static_cast<const void*>(&obj) << '>';
     }
 }
 }
