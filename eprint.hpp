@@ -3,6 +3,7 @@
 //
 
 #ifndef EPRINT_HPP
+#define EPRINT_HPP
 #include <format>
 #include <tuple>
 #include <optional>
