@@ -107,6 +107,7 @@ concept FlushablePolicy = PrintPolicy<P> && requires(P& p) {
 // Character literals traits - works for any CharT
 template <typename CharT>
 struct literals {
+    static constexpr CharT null[] = {'n', 'u', 'l', 'l', 'p', 't', 'r', 0};
     static constexpr CharT space[] = {' ', 0};
     static constexpr CharT none[] = {'N','o','n','e', 0};
     static constexpr CharT open_brace[] = {'{',' ', 0};
@@ -445,15 +446,23 @@ void _print_impl(Policy& policy, Obj&& obj, size_t depth = 0) {
     using string_view_type = std::basic_string_view<CharT>;
 
     if constexpr (_concept::std_t::is_instance_of<Decay_Obj, std::shared_ptr>::value) {
-        policy.write(Lit::address_prefix);
-        policy.write(to_basic_string<CharT>(static_cast<void*>(obj.get())));
-        policy.write(Lit::count_prefix);
-        policy.write(to_basic_string<CharT>(obj.use_count()));
-        policy.write(Lit::close_brace);
+        if (!obj) {
+            policy.write(Lit::null);
+        } else {
+            policy.write(Lit::address_prefix);
+            policy.write(to_basic_string<CharT>(static_cast<void*>(obj.get())));
+            policy.write(Lit::count_prefix);
+            policy.write(to_basic_string<CharT>(obj.use_count()));
+            policy.write(Lit::close_brace);
+        }
     } else if constexpr (_concept::std_t::is_instance_of<Decay_Obj, std::unique_ptr>::value) {
-        policy.write(Lit::address_prefix);
-        policy.write(to_basic_string<CharT>(static_cast<void*>(obj.get())));
-        policy.write(Lit::close_brace);
+        if (!obj) {
+            policy.write(Lit::null);
+        } else {
+            policy.write(Lit::address_prefix);
+            policy.write(to_basic_string<CharT>(static_cast<void*>(obj.get())));
+            policy.write(Lit::close_brace);
+        }
     } else if constexpr (_concept::string_like<Obj>) {
         if (depth != 0) {
             policy.write(Lit::quote);

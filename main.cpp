@@ -359,7 +359,7 @@ void test_custom_policy() {
     wprinter.println(L"Wide string test: ", std::vector{1, 2, 3});
     
     // Test ju_dbg_with
-    int val = 100;
+    std::wstring val = L"JU_DBG_WITH_STRING";
     ju_dbg_with(wprinter, val);
 }
 void test_empty_print() {
