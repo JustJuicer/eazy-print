@@ -90,116 +90,67 @@ namespace std_t {
 /////////////////////// CONCEPT ////////////////////////////////////////////
 
 
-/////////////////////// STD TYPE SPECIALIZATION ////////////////////////////
-template<typename T1, typename T2>
-struct std::formatter<std::pair<T1, T2>> {
-    constexpr auto parse(std::format_parse_context& ctx) {
-        return ctx.begin();
-    }
-    auto format(const std::pair<T1, T2>& pair, std::format_context& ctx) const {
-        auto out = ctx.out();
-        out = std::format_to(out, "({}, {})", pair.first, pair.second);
-        return out;
-    }
+/////////////////////// POLICY /////////////////////////////////////////////
+// Policy concept
+template <typename P>
+concept PrintPolicy = requires {
+    typename P::char_type;
+} && requires(P& p, std::basic_string_view<typename P::char_type> sv) {
+    { p.write(sv) } -> std::same_as<void>;
 };
 
-template <typename ...Args>
-struct std::formatter<std::tuple<Args...>> {
-    constexpr auto parse(std::format_parse_context& ctx) {
-        return ctx.begin();
-    }
-    static void for_each(auto&& fn, auto... args) {
-        (fn(args), ...);
-    }
-    auto format(const std::tuple<Args...>& tuple, std::format_context& ctx) const {
-        auto out = ctx.out();
-        out = std::format_to(out, "(");
-        bool is_first = true;
-        std::apply([&]<typename... Args_>(Args_&&... args) {
-            for_each([&]<typename T>(T&& ele) {
-                if (is_first) {
-                    out = std::format_to(out, "{}", std::forward<T>(ele));
-                    is_first = false;
-                } else {
-                    out = std::format_to(out, ", {}", std::forward<T>(ele));
-                }
-            }, std::forward<Args_>(args)...);
-        } , tuple);
-        out = std::format_to(out, ")");
-        return out;
-    }
+template <typename P>
+concept FlushablePolicy = PrintPolicy<P> && requires(P& p) {
+    { p.flush() } -> std::same_as<void>;
 };
 
-
-template <typename T>
-struct std::formatter<std::optional<T>> {
-    constexpr auto parse(std::format_parse_context& ctx) {
-        return ctx.begin();
-    }
-    auto format(const std::optional<T>& t, std::format_context& ctx) const {
-        auto out = ctx.out();
-        if (t.has_value()) {
-            out = std::format_to(out, "{}", t.value());
-        } else {
-            out = std::format_to(out, "None");
-        }
-        return out;
-    }
+// Character literals traits - works for any CharT
+template <typename CharT>
+struct literals {
+    static constexpr CharT space[] = {' ', 0};
+    static constexpr CharT none[] = {'N','o','n','e', 0};
+    static constexpr CharT open_brace[] = {'{',' ', 0};
+    static constexpr CharT close_brace[] = {' ','}', 0};
+    static constexpr CharT open_bracket[] = {'[', 0};
+    static constexpr CharT close_bracket[] = {']', 0};
+    static constexpr CharT comma_space[] = {',',' ', 0};
+    static constexpr CharT colon_space[] = {':',' ', 0};
+    static constexpr CharT quote[] = {'"', 0};
+    static constexpr CharT newline[] = {'\n', 0};
+    static constexpr CharT open_paren[] = {'(', 0};
+    static constexpr CharT close_paren[] = {')', 0};
+    static constexpr CharT address_prefix[] = {'{',' ','a','d','d','r','e','s','s',':',' ', 0};
+    static constexpr CharT count_prefix[] = {',',' ','c','o','u','n','t',':',' ', 0};
+    static constexpr CharT at[] = {' ','a','t',' ', 0};
+    static constexpr CharT lt[] = {'<', 0};
+    static constexpr CharT gt[] = {'>', 0};
 };
 
-template <>
-struct std::formatter<std::filesystem::path> {
-    constexpr auto parse(std::format_parse_context& ctx) {
-        return ctx.begin();
-    }
-    auto format(const std::filesystem::path& path, std::format_context& ctx) const {
-        auto out = ctx.out();
-        out = std::format_to(out, "{}", path.string());
-        return out;
-    }
+// Built-in policies
+struct cout_policy {
+    using char_type = char;
+    void write(std::string_view sv) { std::cout << sv; }
+    void flush() { std::cout.flush(); }
 };
 
-template <typename T>
-struct std::formatter<std::shared_ptr<T>> {
-    constexpr auto parse(std::format_parse_context& ctx) {
-        return ctx.begin();
-    }
-    auto format(const std::shared_ptr<T>& t, std::format_context& ctx) const {
-        auto out = ctx.out();
-        // out = std::format_to(out, "shared_ptr {{ address: {}, count: {} }}", static_cast<void*>(t.get()), t.use_count());
-        out = std::format_to(out, "{{ address: {}, count: {} }}", static_cast<void*>(t.get()), t.use_count());
-        return out;
-    }
+struct wcout_policy {
+    using char_type = wchar_t;
+    void write(std::wstring_view sv) { std::wcout << sv; }
+    void flush() { std::wcout.flush(); }
 };
 
-template <typename T>
-struct std::formatter<std::unique_ptr<T>> {
-    constexpr auto parse(std::format_parse_context& ctx) {
-        return ctx.begin();
-    }
-    auto format(const std::unique_ptr<T>& t, std::format_context& ctx) const {
-        auto out = ctx.out();
-        // out = std::format_to(out, "shared_ptr {{ address: {}, count: {} }}", static_cast<void*>(t.get()), t.use_count());
-        out = std::format_to(out, "{{ address: {} }}", static_cast<void*>(t.get()));
-        return out;
-    }
+template <typename CharT>
+struct ostream_policy {
+    using char_type = CharT;
+    std::basic_ostream<CharT>& os_;
+    
+    ostream_policy(std::basic_ostream<CharT>& os) : os_(os) {}
+    void write(std::basic_string_view<CharT> sv) { os_ << sv; }
+    void flush() { os_.flush(); }
 };
 
-template <typename T>
-struct std::formatter<std::complex<T>> {
-    constexpr auto parse(std::format_parse_context& ctx) {
-        return ctx.begin();
-    }
-    auto format(const std::complex<T>& t, std::format_context& ctx) const {
-        auto out = ctx.out();
-        out = std::format_to(out, "({}, {})", t.real(), t.imag());
-        return out;
-    }
-};
+/////////////////////// POLICY /////////////////////////////////////////////
 
-// chrono has already been able to format by std formatter
-
-/////////////////////// STD TYPE SPECIALIZATION ////////////////////////////
 namespace ju {
 
 namespace _inner {
@@ -477,172 +428,275 @@ constexpr auto object_to_tuple(T&& obj) {
 /////////////////////// AGGREGATE TYPE /////////////////////////////////////
 
 
-template <typename Obj>
-void _print(std::ostream& os, Obj&& obj, size_t depth = 0) {
+// Helper to convert value to string for Policy output
+template <typename CharT, typename T>
+std::basic_string<CharT> to_basic_string(T&& val) {
+    std::basic_ostringstream<CharT> oss;
+    oss << std::forward<T>(val);
+    return oss.str();
+}
+
+template <PrintPolicy Policy, typename Obj>
+void _print_impl(Policy& policy, Obj&& obj, size_t depth = 0) {
+    using CharT = typename Policy::char_type;
+    using Lit = literals<CharT>;
     using Decay_Obj = std::decay_t<Obj>;
+    using string_type = std::basic_string<CharT>;
+    using string_view_type = std::basic_string_view<CharT>;
 
     if constexpr (_concept::std_t::is_instance_of<Decay_Obj, std::shared_ptr>::value) {
-        os << "{ address: " << static_cast<void*>(obj.get())  << ", count: " << obj.use_count() << " }";
+        policy.write(Lit::address_prefix);
+        policy.write(to_basic_string<CharT>(static_cast<void*>(obj.get())));
+        policy.write(Lit::count_prefix);
+        policy.write(to_basic_string<CharT>(obj.use_count()));
+        policy.write(Lit::close_brace);
     } else if constexpr (_concept::std_t::is_instance_of<Decay_Obj, std::unique_ptr>::value) {
-        os << "{ address: " << static_cast<void*>(obj.get()) << " }";
-    } else if constexpr (requires { os << std::forward<Obj>(obj); }) {
-        if constexpr (_concept::string_like<Obj>) {
-            if (depth != 0) {
-                os << std::format("\"{}\"", std::forward<Obj>(obj));
-                return;
+        policy.write(Lit::address_prefix);
+        policy.write(to_basic_string<CharT>(static_cast<void*>(obj.get())));
+        policy.write(Lit::close_brace);
+    } else if constexpr (_concept::string_like<Obj>) {
+        if (depth != 0) {
+            policy.write(Lit::quote);
+            if constexpr (std::is_convertible_v<Obj, string_view_type>) {
+                policy.write(string_view_type(std::forward<Obj>(obj)));
+            } else {
+                policy.write(string_type(std::forward<Obj>(obj)));
+            }
+            policy.write(Lit::quote);
+        } else {
+            if constexpr (std::is_convertible_v<Obj, string_view_type>) {
+                policy.write(string_view_type(std::forward<Obj>(obj)));
+            } else {
+                policy.write(string_type(std::forward<Obj>(obj)));
             }
         }
-        os << std::forward<Obj>(obj);
-    } else if constexpr (requires { std::forward<Obj>(obj).to_string(); os << std::forward<Obj>(obj).to_string(); }) {
-        os << std::forward<Obj>(obj).to_string();
-    }
-    else if constexpr (_concept::std_t::is_map<Decay_Obj>) {
-        os << "{ ";
+    } else if constexpr (std::is_arithmetic_v<Decay_Obj> || std::is_pointer_v<Decay_Obj>) {
+        policy.write(to_basic_string<CharT>(std::forward<Obj>(obj)));
+    } else if constexpr (requires { std::forward<Obj>(obj).to_string(); }) {
+        policy.write(string_type(std::forward<Obj>(obj).to_string()));
+    } else if constexpr (std::convertible_to<Obj, string_type>) {
+        policy.write(string_type(std::forward<Obj>(obj)));
+    } else if constexpr (_concept::std_t::is_map<Decay_Obj>) {
+        policy.write(Lit::open_brace);
         bool is_first = true;
         for (auto&& pair : std::forward<Obj>(obj)) {
             if (!is_first) {
-                os << ", ";
+                policy.write(Lit::comma_space);
             }
             is_first = false;
-
-            _print(os, pair.first, depth + 1);
-            os << ": ";
-            _print(os, pair.second, depth + 1);
+            _print_impl(policy, pair.first, depth + 1);
+            policy.write(Lit::colon_space);
+            _print_impl(policy, pair.second, depth + 1);
         }
-        os << " }";
+        policy.write(Lit::close_brace);
+    } else if constexpr (std::same_as<Decay_Obj, std::filesystem::path>) {
+        // Must be before range check since path is iterable
+        auto path_str = obj.string();
+        if (depth != 0) {
+            policy.write(Lit::quote);
+            policy.write(string_type(path_str.begin(), path_str.end()));
+            policy.write(Lit::quote);
+        } else {
+            policy.write(string_type(path_str.begin(), path_str.end()));
+        }
     } else if constexpr (std::ranges::range<Obj>) {
-        os << '[';
+        policy.write(Lit::open_bracket);
         bool first = true;
         for (auto&& e : std::forward<Obj>(obj)) {
-            if (!first) os << ", ";
+            if (!first) policy.write(Lit::comma_space);
             first = false;
-            _print(os,  e, depth + 1);
+            _print_impl(policy, e, depth + 1);
         }
-        os << ']';
-    } else if constexpr (std::convertible_to<Obj, std::string>) {
-        os << static_cast<std::string>(std::forward<Obj>(obj));
+        policy.write(Lit::close_bracket);
     } else if constexpr (_concept::std_t::is_instance_of<Decay_Obj, std::pair>::value) {
-        os << '(';
-        _print(os, obj.first, depth + 1);
-        os << ", ";
-        _print(os, obj.second, depth + 1);
-        os << ')';
+        policy.write(Lit::open_paren);
+        _print_impl(policy, obj.first, depth + 1);
+        policy.write(Lit::comma_space);
+        _print_impl(policy, obj.second, depth + 1);
+        policy.write(Lit::close_paren);
     } else if constexpr (_concept::std_t::is_instance_of<Decay_Obj, std::tuple>::value) {
-        auto  for_each = [](auto&& fn, auto... args) {
+        auto for_each = [](auto&& fn, auto... args) {
             (fn(args), ...);
         };
-        os << '(';
+        policy.write(Lit::open_paren);
         bool is_first = true;
         std::apply([&]<typename... Args_>(Args_&&... args) {
             for_each([&]<typename T>(T&& ele) {
                 if (is_first) {
-                    _print(os, std::forward<T>(ele), depth + 1);
+                    _print_impl(policy, std::forward<T>(ele), depth + 1);
                     is_first = false;
                 } else {
-                    os << ", ";
-                    _print(os, std::forward<T>(ele), depth + 1);
+                    policy.write(Lit::comma_space);
+                    _print_impl(policy, std::forward<T>(ele), depth + 1);
                 }
             }, std::forward<Args_>(args)...);
-        } , obj);
-        os << ')';
-
+        }, obj);
+        policy.write(Lit::close_paren);
     } else if constexpr (_concept::std_t::is_instance_of<Decay_Obj, std::optional>::value) {
         if (obj.has_value()) {
-            _print(os, obj.value(), depth); // optional<string> don't need to be wrapped by qm;
+            _print_impl(policy, obj.value(), depth);
         } else {
-            os << "None";
+            policy.write(Lit::none);
         }
-    } else if constexpr (std::same_as<Decay_Obj, std::filesystem::path>) {
-      os << obj.string();
     } else if constexpr (_concept::std_t::is_instance_of<Decay_Obj, std::complex>::value) {
-        _print(os, std::pair{obj.real(), obj.imag()}, depth + 1);
-    } // std::shared_ptr and std::unique_ptr was printed at first, chrono type was printed at the first os << ()
-    else if constexpr (std::is_aggregate_v<Decay_Obj>) {
+        _print_impl(policy, std::pair{obj.real(), obj.imag()}, depth + 1);
+    } else if constexpr (std::is_aggregate_v<Decay_Obj>) {
         using type = Decay_Obj;
         auto members = object_to_tuple(obj);
         auto members_name = get_member_names<type>();
         if (depth != 0) {
-            os << "{ ";
-        } else {    // TODO determined by Configer
-            os << get_type_name<type>() << " { ";
+            policy.write(Lit::open_brace);
+        } else {
+            auto type_name = get_type_name<type>();
+            policy.write(string_type(type_name.begin(), type_name.end()));
+            policy.write(Lit::space);
+            policy.write(Lit::open_brace);
         }
-        constexpr auto members_count = members_count_v<type>;
+        constexpr auto mc = members_count_v<type>;
         auto inner_printer = [&]<size_t Is>(std::integral_constant<size_t, Is>, auto member_name, auto&& member_value) {
             if constexpr (Is != 0) {
-                os << ", ";
+                policy.write(Lit::comma_space);
             }
-            os << member_name << ": ";
-            _print(os, std::forward<decltype(member_value)>(member_value), depth + 1);;
+            policy.write(string_type(member_name.begin(), member_name.end()));
+            policy.write(Lit::colon_space);
+            _print_impl(policy, std::forward<decltype(member_value)>(member_value), depth + 1);
         };
         [&]<size_t ...Is>(std::index_sequence<Is...>){
-            (inner_printer(std::integral_constant<size_t, Is>{}, std::get<Is>(members_name) , std::get<Is>(members)), ...);
-        }(std::make_index_sequence<members_count>{});
-        os << " }";
+            (inner_printer(std::integral_constant<size_t, Is>{}, std::get<Is>(members_name), std::get<Is>(members)), ...);
+        }(std::make_index_sequence<mc>{});
+        policy.write(Lit::close_brace);
+    } else {
+        policy.write(Lit::lt);
+        auto type_name = get_type_name<Decay_Obj>();
+        policy.write(string_type(type_name.begin(), type_name.end()));
+        policy.write(Lit::at);
+        policy.write(to_basic_string<CharT>(static_cast<const void*>(&obj)));
+        policy.write(Lit::gt);
     }
-    else {
-        os << "<" << get_type_name<Decay_Obj> << " at " << static_cast<const void*>(&obj) << '>';
+}
+
+}
+/////////////////////// PRINTER CLASS //////////////////////////////////////
+
+template <PrintPolicy Policy>
+class Printer {
+    Policy policy_;
+public:
+    using char_type = typename Policy::char_type;
+    using string_type = std::basic_string<char_type>;
+    using string_view_type = std::basic_string_view<char_type>;
+    using Lit = literals<char_type>;
+
+    constexpr Printer() requires std::default_initializable<Policy> = default;
+    constexpr Printer(Policy policy) : policy_(std::move(policy)) {}
+
+    // Access policy
+    Policy& policy() { return policy_; }
+    const Policy& policy() const { return policy_; }
+
+    // Single object print
+    template <typename Obj>
+    void print(Obj&& obj) {
+        _inner::_print_impl(policy_, std::forward<Obj>(obj));
+        if constexpr (FlushablePolicy<Policy>) {
+            policy_.flush();
+        }
     }
+
+    template <typename Obj>
+    void println(Obj&& obj) {
+        _inner::_print_impl(policy_, std::forward<Obj>(obj));
+        policy_.write(Lit::newline);
+        if constexpr (FlushablePolicy<Policy>) {
+            policy_.flush();
+        }
+    }
+
+    // Multiple arguments print
+    template <typename... Args>
+    void print(Args&&... args) {
+        (_inner::_print_impl(policy_, std::forward<Args>(args)), ...);
+        if constexpr (FlushablePolicy<Policy>) {
+            policy_.flush();
+        }
+    }
+
+    template <typename... Args>
+    void println(Args&&... args) {
+        (_inner::_print_impl(policy_, std::forward<Args>(args)), ...);
+        policy_.write(Lit::newline);
+        if constexpr (FlushablePolicy<Policy>) {
+            policy_.flush();
+        }
+    }
+
+    // // Empty println
+    // void println() {
+    //     policy_.write(Lit::newline);
+    //     if constexpr (FlushablePolicy<Policy>) {
+    //         policy_.flush();
+    //     }
+    // }
+
+    // Type name print
+    template <typename TypeName>
+    void print() {
+        auto type_name = _inner::get_type_name<std::remove_reference_t<TypeName>>();
+        policy_.write(string_type(type_name.begin(), type_name.end()));
+        if constexpr (FlushablePolicy<Policy>) {
+            policy_.flush();
+        }
+    }
+
+    template <typename TypeName>
+    void println() {
+        auto type_name = _inner::get_type_name<std::remove_reference_t<TypeName>>();
+        policy_.write(string_type(type_name.begin(), type_name.end()));
+        policy_.write(Lit::newline);
+        if constexpr (FlushablePolicy<Policy>) {
+            policy_.flush();
+        }
+    }
+
+    // Convert to string without output
+    template <typename Obj>
+    string_type to_string(Obj&& obj) {
+        string_type result;
+        struct string_policy {
+            using char_type = Printer::char_type;
+            string_type* str;
+            void write(string_view_type sv) { str->append(sv); }
+        };
+        string_policy sp{&result};
+        _inner::_print_impl(sp, std::forward<Obj>(obj));
+        return result;
+    }
+};
+
+// Factory functions
+template <PrintPolicy Policy>
+constexpr auto make_printer(Policy&& policy) {
+    return Printer<std::decay_t<Policy>>(std::forward<Policy>(policy));
 }
-}
-template <typename Obj>
-void print(Obj&& obj) {
-    _inner::_print(std::cout, std::forward<Obj>(obj));
-    std::cout.flush();
-}
-template <typename Obj>
-void println(Obj&& obj) {
-    _inner::_print(std::cout, std::forward<Obj>(obj));
-    std::cout << '\n';
-    std::cout.flush();
-}
-template <typename Obj>
-void print(std::ostream& os, Obj&& obj) {
-    _inner::_print(os, std::forward<Obj>(obj));
-    os.flush();
-}
-template <typename Obj>
-void println(std::ostream& os, Obj&& obj) {
-    _inner::_print(os, std::forward<Obj>(obj));
-    os << '\n';
-    os.flush();
-}
-template <typename ...Args>
-void print(Args&&... args) {
-    (print(std::forward<Args>(args)), ...);
-}
-template <typename ...Args>
-void println(Args&&... args) {
-    (print(std::forward<Args>(args)), ...);
-    std::cout << '\n';
-}
-template <typename ...Args>
-void print(std::ostream& os, Args&&... args) {
-    (print(os, std::forward<Args>(args)), ...);
-}
-template <typename ...Args>
-void println(std::ostream& os, Args&&... args) {
-    (print(os, std::forward<Args>(args)), ...);
-    std::cout << '\n';
+
+template <typename CharT>
+auto make_ostream_printer(std::basic_ostream<CharT>& os) {
+    return Printer<ostream_policy<CharT>>(ostream_policy<CharT>(os));
 }
 
 
-template <typename TypeName>
-void print() {
-    _inner::_print(std::cout, _inner::get_type_name<std::remove_reference_t<TypeName>>());
-    std::cout.flush();
-}
 
-template <typename TypeName>
-void println() {
-    _inner::_print(std::cout, _inner::get_type_name<std::remove_reference_t<TypeName>>());
-    std::cout << '\n';
-    std::cout.flush();
+
 }
+/////////////////////// GLOBAL INSTANCE ////////////////////////////////////
+
+inline ju::Printer<cout_policy> jo;
+
+
+/////////////////////// MACROS /////////////////////////////////////////////
 
 #define ju_tostring(x) #x
-#define ju_dbg(e) ju::println(ju_tostring(e), ": ", e)
+#define ju_dbg(e) jo.println(ju_tostring(e), ": ", e)
+#define ju_dbg_with(printer, e) (printer).println(ju_tostring(e), ": ", e)
 
-}
-#define EPRINT_HPP
-
-#endif //SPRINT_HPP
+#endif //EPRINT_HPP
