@@ -13,6 +13,8 @@
 #include <array>
 #include <numeric>
 #include <sstream>
+#include <chrono>
+#include <thread>
 
 
 void print_section(const char* title) {
@@ -365,6 +367,44 @@ void test_custom_policy() {
 void test_empty_print() {
     jo.println();
 }
+
+// ==================== Test: std::chrono::time_point ====================
+void test_chrono_time_point() {
+    print_section("std::chrono::time_point");
+
+    auto now = std::chrono::system_clock::now();
+    jo.println("system_clock::now(): ", now);
+
+    auto tp1 = std::chrono::system_clock::time_point{};
+    jo.println("epoch time: ", tp1);
+
+    // steady_clock time_point
+    auto steady_now = std::chrono::steady_clock::now();
+    jo.println("steady_clock::now(): ", steady_now);
+
+    // time_point in container
+    std::vector times{now, tp1};
+    jo.println("vector<time_point>: ", times);
+}
+
+// ==================== Test: ju::type_name ====================
+void test_type_name_api() {
+    print_section("ju::type_name<T>() API");
+
+    jo.println("type_name<int>: ", ju::type_name<int>());
+    jo.println("type_name<double>: ", ju::type_name<double>());
+    jo.println("type_name<std::string>: ", ju::type_name<std::string>());
+    jo.println("type_name<std::vector<int>>: ", ju::type_name<std::vector<int>>());
+    jo.println("type_name<std::map<std::string, int>>: ", ju::type_name<std::map<std::string, int>>());
+
+    // constexpr test
+    constexpr auto name = ju::type_name<std::optional<int>>();
+    jo.println("constexpr type_name<optional<int>>: ", name);
+
+    // with reference types (should strip reference)
+    jo.println("type_name<int&>: ", ju::type_name<int&>());
+    jo.println("type_name<const int&>: ", ju::type_name<const int&>());
+}
 int main() {
     std::cout << "==============================================\n";
     std::cout << "    eprint Library Test Suite (New API)       \n";
@@ -394,6 +434,8 @@ int main() {
     test_edge_cases();
     test_custom_policy();
     test_empty_print();
+    test_chrono_time_point();
+    test_type_name_api();
     std::cout << "\n==============================================\n";
     std::cout << "              All Tests Completed!            \n";
     std::cout << "==============================================\n";

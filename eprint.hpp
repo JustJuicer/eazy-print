@@ -14,6 +14,8 @@
 #include <array>
 #include <map>
 #include <unordered_map>
+#include <chrono>
+#include <iomanip>
 /////////////////////// CONCEPT ////////////////////////////////////////////
 namespace ju {
 namespace _concept {
@@ -82,6 +84,15 @@ namespace std_t {
 
     template <typename T>
     concept is_map = any_of_container<T, std::map, std::multimap, std::unordered_map, std::unordered_multimap>;
+
+    template <typename T>
+    struct is_time_point : std::false_type {};
+
+    template <typename Clock, typename Duration>
+    struct is_time_point<std::chrono::time_point<Clock, Duration>> : std::true_type {};
+
+    template <typename T>
+    concept is_chrono_time_point = is_time_point<std::decay_t<T>>::value;
 }
 
 }
@@ -549,6 +560,28 @@ void _print_impl(Policy& policy, Obj&& obj, size_t depth = 0) {
         }
     } else if constexpr (_concept::std_t::is_instance_of<Decay_Obj, std::complex>::value) {
         _print_impl(policy, std::pair{obj.real(), obj.imag()}, depth + 1);
+    } else if constexpr (_concept::std_t::is_chrono_time_point<Decay_Obj>) {
+        using clock_type = typename Decay_Obj::clock;
+        if constexpr (std::is_same_v<clock_type, std::chrono::system_clock>) {
+            // system_clock: convert to readable date/time
+            auto time_t_val = std::chrono::system_clock::to_time_t(obj);
+            std::tm tm_val{};
+#ifdef _MSC_VER
+            localtime_s(&tm_val, &time_t_val);
+#else
+            localtime_r(&time_t_val, &tm_val);
+#endif
+            std::basic_ostringstream<CharT> oss;
+            oss << std::put_time(&tm_val, "%Y-%m-%d %H:%M:%S");
+            policy.write(oss.str());
+        } else {
+            // other clocks (steady_clock, high_resolution_clock, etc.): print duration since epoch
+            auto duration = obj.time_since_epoch();
+            auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count();
+            std::basic_ostringstream<CharT> oss;
+            oss << ns << "ns since epoch";
+            policy.write(oss.str());
+        }
     } else if constexpr (std::is_aggregate_v<Decay_Obj>) {
         using type = Decay_Obj;
         auto members = object_to_tuple(obj);
@@ -691,6 +724,12 @@ constexpr auto make_printer(Policy&& policy) {
 template <typename CharT>
 auto make_ostream_printer(std::basic_ostream<CharT>& os) {
     return Printer<ostream_policy<CharT>>(ostream_policy<CharT>(os));
+}
+
+// Public API: get type name as string_view
+template <class T>
+constexpr std::string_view type_name() {
+    return _inner::get_type_name<std::remove_cvref_t<T>>();
 }
 
 
