@@ -105,8 +105,8 @@ namespace std_t {
 // Policy concept
 template <typename P>
 concept PrintPolicy = requires {
-    typename P::char_type;
-} && requires(P& p, std::basic_string_view<typename P::char_type> sv) {
+    typename std::decay_t<P>::char_type;
+} && requires(P& p, std::basic_string_view<typename std::decay_t<P>::char_type> sv) {
     { p.write(sv) } -> std::same_as<void>;
 };
 
@@ -155,7 +155,7 @@ template <typename CharT>
 struct ostream_policy {
     using char_type = CharT;
     std::basic_ostream<CharT>& os_;
-    
+
     ostream_policy(std::basic_ostream<CharT>& os) : os_(os) {}
     void write(std::basic_string_view<CharT> sv) { os_ << sv; }
     void flush() { os_.flush(); }
@@ -620,9 +620,10 @@ void _print_impl(Policy& policy, Obj&& obj, size_t depth = 0) {
 }
 /////////////////////// PRINTER CLASS //////////////////////////////////////
 
-template <PrintPolicy Policy>
+template <PrintPolicy PP>
 class Printer {
-    Policy policy_;
+    PP policy_;
+    using Policy = std::decay_t<PP>;
 public:
     using char_type = typename Policy::char_type;
     using string_type = std::basic_string<char_type>;
@@ -630,7 +631,8 @@ public:
     using Lit = literals<char_type>;
 
     constexpr Printer() requires std::default_initializable<Policy> = default;
-    constexpr Printer(Policy policy) : policy_(std::move(policy)) {}
+    template <class P>
+    constexpr Printer(P&& policy) : policy_(std::forward<P>(policy)) {}
 
     // Access policy
     Policy& policy() { return policy_; }
@@ -672,14 +674,6 @@ public:
         }
     }
 
-    // // Empty println
-    // void println() {
-    //     policy_.write(Lit::newline);
-    //     if constexpr (FlushablePolicy<Policy>) {
-    //         policy_.flush();
-    //     }
-    // }
-
     // Type name print
     template <typename TypeName>
     void print() {
@@ -714,16 +708,19 @@ public:
         return result;
     }
 };
+template <class P>
+Printer(P&& p) -> Printer<P>;
+
 
 // Factory functions
 template <PrintPolicy Policy>
 constexpr auto make_printer(Policy&& policy) {
-    return Printer<std::decay_t<Policy>>(std::forward<Policy>(policy));
+    return Printer(std::forward<Policy>(policy));
 }
 
 template <typename CharT>
 auto make_ostream_printer(std::basic_ostream<CharT>& os) {
-    return Printer<ostream_policy<CharT>>(ostream_policy<CharT>(os));
+    return Printer(ostream_policy<CharT>(os));
 }
 
 // Public API: get type name as string_view

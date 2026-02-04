@@ -405,6 +405,20 @@ void test_type_name_api() {
     jo.println("type_name<int&>: ", ju::type_name<int&>());
     jo.println("type_name<const int&>: ", ju::type_name<const int&>());
 }
+
+void test_custom_printer() {
+    print_section("Custom Printer");
+    struct UIPrinter {
+        using char_type = char;
+        void write(std::string_view str) {
+            if (str.empty()) return;
+            std::cout << "[ui] " << str;
+        }
+    };
+    static auto uio = ju::make_printer(UIPrinter{});
+    uio.println("start with tag: ui");
+}
+
 int main() {
     std::cout << "==============================================\n";
     std::cout << "    eprint Library Test Suite (New API)       \n";
@@ -436,6 +450,7 @@ int main() {
     test_empty_print();
     test_chrono_time_point();
     test_type_name_api();
+    test_custom_printer();
     std::cout << "\n==============================================\n";
     std::cout << "              All Tests Completed!            \n";
     std::cout << "==============================================\n";
